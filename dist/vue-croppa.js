@@ -1,5 +1,5 @@
 /*
- * vue-croppa v1
+ * vue-croppa v1.0.0
  * https://github.com/raffaalves/vue-croppa
  */
 
@@ -10,6 +10,10 @@
 }(this, (function () { 'use strict';
 
 var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+
+
+
+
 
 function createCommonjsModule(fn, module) {
 	return module = { exports: {} }, fn(module, module.exports), module.exports;
@@ -39,7 +43,6 @@ var canvasExifOrientation = createCommonjsModule(function (module, exports) {
 
     ctx.save();
 
-    console.log(degrees)
     if (isNaN(degrees)) {
       if (degrees === 'x') {
         ctx.translate(width, 0);
@@ -792,7 +795,6 @@ var component = { render: function render() {
         console.warn('Invalid argument for rotate() method. It should one of the integers from -3 to 3.');
         degrees = 15;
       }
-      console.log(degrees)
       this._rotateByStep(degrees);
     },
     flipX: function flipX() {
