@@ -2,8 +2,6 @@
 
 > A simple straightforward customizable mobile-friendly image cropper for Vue 2.0.
 
-<a href="https://zhanziyang.github.io/vue-croppa/"><img src="https://zhanziyang.github.io/vue-croppa/static/preview2.png?v=3" width="400" alt="try it out" /></a>
-
 ## Features
 
 * **Straightforward**: What you see is what you get
@@ -542,9 +540,9 @@ These states will be synced:
 
 * (**v1.0.0+**) for more flexibility.
 
-#### rotate(step: number)
+#### rotate(degrees: number)
 
-* 1 step = 90 deg
+* default = 15 deg
 * positive number: rotates clockwise
 * negative number: rotates counterclockwise.
 
@@ -560,9 +558,6 @@ These states will be synced:
 
 * Opens the file chooser window to Choose an image. Useful when default click-to-choose interaction is disabled.
 
-#### <s>myCroppa.reset()</s>
-
-* **Deprecated** Please use `remove()` instead.
 
 #### remove()
 

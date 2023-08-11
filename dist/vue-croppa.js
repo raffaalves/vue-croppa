@@ -1,11 +1,8 @@
 /*
- * vue-croppa v1.3.8
- * https://github.com/zhanziyang/vue-croppa
- * 
- * Copyright (c) 2018 zhanziyang
- * Released under the ISC license
+ * vue-croppa v1
+ * https://github.com/raffaalves/vue-croppa
  */
-  
+
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
 	typeof define === 'function' && define.amd ? define(factory) :
@@ -13,10 +10,6 @@
 }(this, (function () { 'use strict';
 
 var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
-
-
-
-
 
 function createCommonjsModule(fn, module) {
 	return module = { exports: {} }, fn(module, module.exports), module.exports;
@@ -32,8 +25,7 @@ var canvasExifOrientation = createCommonjsModule(function (module, exports) {
 }(commonjsGlobal, function () {
   'use strict';
 
-  function drawImage(img, orientation, x, y, width, height) {
-    if (!/^[1-8]$/.test(orientation)) throw new Error('orientation should be [1-8]');
+  function drawImage(img, degrees, x, y, width, height) {
 
     if (x == null) x = 0;
     if (y == null) y = 0;
@@ -46,65 +38,40 @@ var canvasExifOrientation = createCommonjsModule(function (module, exports) {
     canvas.height = height;
 
     ctx.save();
-    switch (+orientation) {
-      // 1 = The 0th row is at the visual top of the image, and the 0th column is the visual left-hand side.
-      case 1:
-          break;
 
-      // 2 = The 0th row is at the visual top of the image, and the 0th column is the visual right-hand side.
-      case 2:
-         ctx.translate(width, 0);
-         ctx.scale(-1, 1);
-         break;
+    console.log(degrees)
+    if (isNaN(degrees)) {
+      if (degrees === 'x') {
+        ctx.translate(width, 0);
+        ctx.scale(-1, 1);
+      } else if (degrees === 'y') {
+        ctx.translate(0, height);
+        ctx.scale(1, -1);
+      }
 
-      // 3 = The 0th row is at the visual bottom of the image, and the 0th column is the visual right-hand side.
-      case 3:
-          ctx.translate(width, height);
-          ctx.rotate(180 / 180 * Math.PI);
-          break;
+      ctx.drawImage(img, x, y, width, height);
+      ctx.restore();
 
-      // 4 = The 0th row is at the visual bottom of the image, and the 0th column is the visual left-hand side.
-      case 4:
-          ctx.translate(0, height);
-          ctx.scale(1, -1);
-          break;
+    } else {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
 
-      // 5 = The 0th row is the visual left-hand side of the image, and the 0th column is the visual top.
-      case 5:
-          canvas.width = height;
-          canvas.height = width;
-          ctx.rotate(90 / 180 * Math.PI);
-          ctx.scale(1, -1);
-          break;
+      // save the unrotated context of the canvas so we can restore it later
+      // the alternative is to untranslate & unrotate after drawing
+      ctx.save();
 
-      // 6 = The 0th row is the visual right-hand side of the image, and the 0th column is the visual top.
-      case 6:
-          canvas.width = height;
-          canvas.height = width;
-          ctx.rotate(90 / 180 * Math.PI);
-          ctx.translate(0, -height);
-          break;
+      // move to the center of the canvas
+      ctx.translate(canvas.width/2,canvas.height/2);
 
-      // 7 = The 0th row is the visual right-hand side of the image, and the 0th column is the visual bottom.
-      case 7:
-          canvas.width = height;
-          canvas.height = width;
-          ctx.rotate(270 / 180 * Math.PI);
-          ctx.translate(-width, height);
-          ctx.scale(1, -1);
-          break;
+      // rotate the canvas to the specified degrees
+      ctx.rotate(degrees*Math.PI/180);
 
-      // 8 = The 0th row is the visual left-hand side of the image, and the 0th column is the visual bottom.
-      case 8:
-          canvas.width = height;
-          canvas.height = width;
-          ctx.translate(0, width);
-          ctx.rotate(270 / 180 * Math.PI);
-          break;
+      // draw the image
+      // since the context is rotated, the image will be rotated also
+      ctx.drawImage(img,-width/2,-width/2);
+
+      // we’re done with the rotating so restore the unrotated context
+      ctx.restore();
     }
-
-    ctx.drawImage(img, x, y, width, height);
-    ctx.restore();
 
     return canvas;
   }
@@ -818,23 +785,23 @@ var component = { render: function render() {
       this.zoom(false);
     },
     rotate: function rotate() {
-      var step = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
+      var degrees = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 15;
 
       if (this.disableRotation || this.disabled || this.passive) return;
-      step = parseInt(step);
-      if (isNaN(step) || step > 3 || step < -3) {
+      if (isNaN(degrees) || degrees > 360 || degrees < -360) {
         console.warn('Invalid argument for rotate() method. It should one of the integers from -3 to 3.');
-        step = 1;
+        degrees = 15;
       }
-      this._rotateByStep(step);
+      console.log(degrees)
+      this._rotateByStep(degrees);
     },
     flipX: function flipX() {
       if (this.disableRotation || this.disabled || this.passive) return;
-      this._setOrientation(2);
+      this._setOrientation('x');
     },
     flipY: function flipY() {
       if (this.disableRotation || this.disabled || this.passive) return;
-      this._setOrientation(4);
+      this._setOrientation('y');
     },
     refresh: function refresh() {
       this.$nextTick(this._initialize);
@@ -987,29 +954,8 @@ var component = { render: function render() {
       this.canvas.style.width = (this.useAutoSizing ? this.realWidth : this.width) + 'px';
       this.canvas.style.height = (this.useAutoSizing ? this.realHeight : this.height) + 'px';
     },
-    _rotateByStep: function _rotateByStep(step) {
-      var orientation = 1;
-      switch (step) {
-        case 1:
-          orientation = 6;
-          break;
-        case 2:
-          orientation = 3;
-          break;
-        case 3:
-          orientation = 8;
-          break;
-        case -1:
-          orientation = 8;
-          break;
-        case -2:
-          orientation = 3;
-          break;
-        case -3:
-          orientation = 6;
-          break;
-      }
-      this._setOrientation(orientation);
+    _rotateByStep: function _rotateByStep(degrees) {
+      this._setOrientation(degrees);
     },
     _setImagePlaceholder: function _setImagePlaceholder() {
       var _this3 = this;
@@ -1554,41 +1500,14 @@ var component = { render: function render() {
       var applyMetadata = arguments[1];
 
       var useOriginal = applyMetadata;
-      if (orientation > 1 || useOriginal) {
-        if (!this.img) return;
-        this.rotating = true;
-        // u.getRotatedImageData(useOriginal ? this.originalImage : this.img, orientation)
-        var _img = u.getRotatedImage(useOriginal ? this.originalImage : this.img, orientation);
-        _img.onload = function () {
-          _this8.img = _img;
-          _this8._placeImage(applyMetadata);
-        };
-      } else {
-        this._placeImage(applyMetadata);
-      }
-
-      if (orientation == 2) {
-        // flip x
-        this.orientation = u.flipX(this.orientation);
-      } else if (orientation == 4) {
-        // flip y
-        this.orientation = u.flipY(this.orientation);
-      } else if (orientation == 6) {
-        // 90 deg
-        this.orientation = u.rotate90(this.orientation);
-      } else if (orientation == 3) {
-        // 180 deg
-        this.orientation = u.rotate90(u.rotate90(this.orientation));
-      } else if (orientation == 8) {
-        // 270 deg
-        this.orientation = u.rotate90(u.rotate90(u.rotate90(this.orientation)));
-      } else {
-        this.orientation = orientation;
-      }
-
-      if (useOriginal) {
-        this.orientation = orientation;
-      }
+      if (!this.img) return;
+      this.rotating = true;
+      // u.getRotatedImageData(useOriginal ? this.originalImage : this.img, orientation)
+      var _img = u.getRotatedImage(useOriginal ? this.originalImage : this.img, orientation);
+      _img.onload = function () {
+        _this8.img = _img;
+        _this8._placeImage(applyMetadata);
+      };
     },
     _paintBackground: function _paintBackground() {
       var backgroundColor = !this.canvasColor || this.canvasColor == 'default' ? 'transparent' : this.canvasColor;
